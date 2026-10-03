@@ -2,6 +2,8 @@ AfterTheEnd does not ask whether a clause is valid, and it does not check a clau
 
 <p align="center"><img src="logo.png" alt="AfterTheEnd logo" width="128"></p>
 
+<p align="center"><img src="docs/evidence/1-before-close.png" alt="Before the close" width="45%"> <img src="docs/evidence/3-after-close.png" alt="After the close" width="45%"></p>
+
 # AfterTheEnd
 
 A dApp on GenLayer StudioNet (chain 61999) built on the `SurvivalGate` Intelligent Contract
@@ -9,7 +11,7 @@ A dApp on GenLayer StudioNet (chain 61999) built on the `SurvivalGate` Intellige
 
 | | |
 |---|---|
-| Live app | _(Vercel URL)_ |
+| Live app | https://after-the-end-chi.vercel.app |
 | Contract (this Project's own deployment) | [`0x4fE214a0a79888c3bA8639976Ec4Ed4b08861B2A`](https://explorer-studio.genlayer.com/address/0x4fE214a0a79888c3bA8639976Ec4Ed4b08861B2A) |
 | Source | frozen; SHA-256 in `SOURCE_SHA256.txt`, checked in CI |
 | Contract submission | SurvivalGate — [github.com/quyenvu13/SurvivalGate](https://github.com/quyenvu13/SurvivalGate) (separate address) |

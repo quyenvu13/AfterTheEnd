@@ -47,7 +47,7 @@ Only what needs a real wallet, a real signature or a human eye. Results and hash
 
 - The contract logic and the three must-verify checks were run on the Intelligent Contract deployment
   (11 transactions, all as expected; see the SurvivalGate repository).
-- This Project: the same frozen source deployed again at its own address, then 5 transactions through the
+- This Project: the same frozen source deployed again at its own address, then 6 transactions through the
   app and 3 screenshots (`RUNTIME_EVIDENCE.md`).
 
 Note on the frontend: a call the app already knows will revert is **not** sent — the button is disabled
@@ -62,11 +62,14 @@ by design: no clause is recorded with a label the validators did not agree on. T
 
 - The Direct Mode tests use **mocked** model answers. They prove the deterministic code paths, not what
   the real model returns. Only RUNTIME_EVIDENCE proves labels.
+- **Label stability is not guaranteed on borderline sentences.** E3 was labelled `DIES_WITH_IT` on the
+  Intelligent Contract deployment (after one leader rotation) and `SURVIVES` on the Project deployment.
+  Both are recorded as they came out (`RUNTIME_EVIDENCE.md`).
 - Clause texts longer than about 160 characters (the contract allows 600) have not been sent on
   StudioNet; the calldata path above 255 bytes is not proven.
 - Prompt-injection resistance is argued from the fence and the door check; no adversarial model run
   was performed.
 - The UI flow was rendered against a local mock of the RPC to check the three screens; the real
-  wallet flow is covered only by the 5 Project transactions.
+  wallet flow is covered only by the Project transactions.
 - `closed_at` comes from `gl.message_raw["datetime"]`; its exact format on StudioNet is whatever the
   node supplies, and nothing depends on it.
