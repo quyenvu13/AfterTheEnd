@@ -72,6 +72,11 @@ export default function App() {
     window.ethereum?.on?.("accountsChanged", (accounts: string[]) => setMe((accounts?.[0] ?? "").toLowerCase()));
   }, []);
 
+  // After a wallet switch the loaded counterpart may now be the connected wallet itself.
+  useEffect(() => {
+    if (me && counterpart === me) setCounterpart("");
+  }, [me, counterpart]);
+
   const ids = useMemo(() => {
     if (!me || !counterpart) return null;
     return { asAuthor: agreementId(me, counterpart), asOther: agreementId(counterpart, me) };
@@ -142,6 +147,11 @@ export default function App() {
     const check = normalizeWallet(counterpartInput);
     if (!check.ok) {
       setTx({ phase: "error", message: check.reason });
+      return;
+    }
+    if (check.wallet === me) {
+      setCounterpart("");
+      setTx({ phase: "error", message: "That is your own connected wallet. Enter the other party's wallet." });
       return;
     }
     setTx({ phase: "idle", message: "" });
