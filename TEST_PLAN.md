@@ -35,11 +35,11 @@ bigram separates the classes) and `PASS` (the rubric shares no content word with
 not stem; the rubric was also read by hand for near-matches and for naming any category a test case
 belongs to.
 
-Must-verify on StudioNet — all three PASSED on 2026-10-03 on the Intelligent Contract deployment
+Key checks on StudioNet — all three PASSED on 2026-10-03 on the Intelligent Contract deployment
 (`0x294667415F31825ddC29f986B47c3dE747c1ff85`, 11 transactions, recorded in the SurvivalGate repository):
-- MV-1: S4 and E3 get different labels.
-- MV-2: S3 and E4 get different labels.
-- MV-3: before the close `invoke_clause` succeeds on both a STANDING and a LAPSED clause; after the close
+- check 1: S4 and E3 get different labels.
+- check 2: S3 and E4 get different labels.
+- check 3: before the close `invoke_clause` succeeds on both a STANDING and a LAPSED clause; after the close
   it succeeds on STANDING and reverts on LAPSED.
 
 If a case gets the wrong label the rubric is **not** edited to make it pass; the real result is recorded.

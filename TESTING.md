@@ -13,7 +13,7 @@ SUBMITTED ≠ ACCEPTED ≠ FINALIZED ≠ EXECUTION SUCCESS ≠ POSTCONDITION PAS
 | genvm-linter (AST, offline) | `python3 -m genvm_linter.cli lint contracts/SurvivalGate.py` | passed (3 checks), rc 0 |
 | genvm-linter schema / typecheck | `python3.13 -m genvm_linter.cli schema|typecheck …` | 12 methods; no type errors (run once, not in CI) |
 | contract tests, Direct Mode | `python3 -m pytest tests/contract -q` | 53 passed |
-| frontend logic tests | `npm test` | 44 passed |
+| frontend logic tests | `npm test` | 43 passed |
 | build | `npm run build` (`tsc -b && vite build`) | rc 0 |
 | source hash | `npm run verify:source` | PASS |
 | calldata table | `node tools/calldata-bytes.mjs` | every hard-block row ≤ 255 bytes (table below) |
@@ -45,7 +45,7 @@ the CI log.
 
 Only what needs a real wallet, a real signature or a human eye. Results and hashes: `RUNTIME_EVIDENCE.md`.
 
-- The contract logic and the three must-verify checks were run on the Intelligent Contract deployment
+- The contract logic and the three key checks were run on the Intelligent Contract deployment
   (11 transactions, all as expected; see the SurvivalGate repository).
 - This Project: the same frozen source deployed again at its own address, then 6 transactions through the
   app and 3 screenshots (`RUNTIME_EVIDENCE.md`).
