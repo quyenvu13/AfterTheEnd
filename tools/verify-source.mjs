@@ -1,10 +1,10 @@
-// Compares the SHA-256 of contracts/SurvivalGate.py with SOURCE_SHA256.txt.
+// Compares the SHA-256 of contracts/ClauseAccord.py with SOURCE_SHA256.txt.
 // CRLF is normalized to LF first (Studio stores source with CRLF), and one
 // missing or extra trailing newline is tolerated.
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 
-const FILE = "contracts/SurvivalGate.py";
+const FILE = "contracts/ClauseAccord.py";
 const expected = readFileSync("SOURCE_SHA256.txt", "utf8").trim().split(/\s+/)[0].toLowerCase();
 const lf = readFileSync(FILE, "utf8").replace(/\r\n/g, "\n");
 const variants = new Set([lf, lf.endsWith("\n") ? lf.slice(0, -1) : lf + "\n"]);

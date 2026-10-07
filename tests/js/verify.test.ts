@@ -1,45 +1,64 @@
-// Postconditions must reject a stale record that merely has the expected id.
+// Postconditions: a write is reported as done only when the reloaded state shows it.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { closeVerified, contestVerified, invokeVerified, recordVerified } from "../../src/lib/verify.ts";
-import type { Agreement, Clause } from "../../src/lib/types.ts";
+import { clauseIdOf } from "../../src/lib/ids.ts";
+import {
+  cancelCloseVerified, confirmCloseVerified, declineVerified, invokeVerified, openVerified, proposeVerified, ratifyVerified,
+  requestCloseVerified, respondVerified, withdrawVerified,
+} from "../../src/lib/verify.ts";
+import { A, AID, agreement, B, clause, E1, inv, S4, TITLE } from "./fixture.ts";
 
-const ME = "0x" + "a".repeat(40);
-const OTHER = "0x" + "b".repeat(40);
-const AID = "1".repeat(64);
-const CID = "2".repeat(64);
-const ag = (o: Partial<Agreement> = {}): Agreement => ({ agreement_id: AID, author: ME, other_wallet: OTHER, other_label: "the other side",
-  state: "LIVE", closed_by: "", closed_at: "", clause_count: 1, standing_count: 1, lapsed_count: 0, ...o });
-const cl = (o: Partial<Clause> = {}): Clause => ({ clause_id: CID, agreement_id: AID, text: "A clause.", outcome: "SURVIVES", fate: "STANDING",
-  invocation_count: 0, invocable: true, agreement_state: "LIVE", author: ME, other_wallet: OTHER, ...o });
-const sub = { me: ME, otherWallet: OTHER, label: "the other side", text: "  A clause. ", agreementId: AID, clauseId: CID };
-
-test("fresh first clause verifies", () => {
-  assert.equal(recordVerified(null, ag(), cl(), sub), true);
+test("open: mine, the named other side, LIVE and empty", () => {
+  const s = { id: AID, me: A, other: B, title: `  ${TITLE} ` };
+  const a = agreement({ slot_count: 0, active_count: 0 });
+  assert.ok(openVerified(a, s));
+  assert.ok(!openVerified({ ...a, party_b: A }, s));
+  assert.ok(!openVerified({ ...a, state: "CLOSING" }, s));
 });
 
-test("counters must move by exactly one from the snapshot", () => {
-  assert.equal(recordVerified(ag(), ag(), cl(), sub), false);                     // nothing moved: stale
-  assert.equal(recordVerified(ag(), ag({ clause_count: 2, standing_count: 2 }), cl(), sub), true);
-  assert.equal(recordVerified(ag(), ag({ clause_count: 2, standing_count: 1, lapsed_count: 1 }), cl(), sub), false); // wrong bucket
+test("propose: PROPOSED by me, not invocable, counters moved; verdict and fate agree", () => {
+  const before = agreement({ slot_count: 0, active_count: 0 });
+  const after = agreement();
+  const s = { id: clauseIdOf(AID, S4), me: A, text: ` ${S4} ` };
+  assert.ok(proposeVerified(before, after, clause(), s));
+  assert.ok(!proposeVerified(before, after, clause({ fate: "LAPSED" }), s));
+  assert.ok(!proposeVerified(before, after, clause({ state: "RATIFIED", invocable: true }), s), "bound at once is wrong");
+  assert.ok(!proposeVerified(before, before, clause(), s));
 });
 
-test("every written field must match", () => {
-  assert.equal(recordVerified(null, ag(), cl({ text: "Other text." }), sub), false);
-  assert.equal(recordVerified(null, ag({ other_wallet: "0x" + "c".repeat(40) }), cl(), sub), false);
-  assert.equal(recordVerified(null, ag(), cl({ invocation_count: 1 }), sub), false);
-  assert.equal(recordVerified(null, ag(), cl({ outcome: "DIES_WITH_IT" }), sub), false);   // label/fate mismatch
-  assert.equal(recordVerified(null, ag({ state: "CLOSED" }), cl(), sub), false);
-  assert.equal(recordVerified(null, null, cl(), sub), false);
+test("ratify: RATIFIED with the same hash and fate; the right counter moves", () => {
+  const before = agreement();
+  const c0 = clause();
+  assert.ok(ratifyVerified(before, c0, agreement({ standing_count: 1 }), clause({ state: "RATIFIED", invocable: true })));
+  assert.ok(!ratifyVerified(before, c0, agreement({ lapsed_count: 1 }), clause({ state: "RATIFIED", invocable: true })));
+  assert.ok(!ratifyVerified(before, c0, agreement({ standing_count: 1 }), clause({ state: "RATIFIED", invocable: true, text_hash: "0".repeat(64) })));
 });
 
-test("invoke / close / contest postconditions", () => {
-  const inv = { clause_id: CID, index: 3, note: "used", by: ME, contested: false };
-  assert.equal(invokeVerified(2, cl({ invocation_count: 3 }), inv, ME, " used "), true);
-  assert.equal(invokeVerified(3, cl({ invocation_count: 3 }), inv, ME, "used"), false);
-  assert.equal(invokeVerified(2, cl({ invocation_count: 3 }), { ...inv, by: OTHER }, ME, "used"), false);
-  assert.equal(closeVerified(ag({ state: "CLOSED", closed_by: ME, closed_at: "2026-10-03T00:00:00Z" }), ME), true);
-  assert.equal(closeVerified(ag({ state: "CLOSED", closed_by: OTHER, closed_at: "x" }), ME), false);
-  assert.equal(contestVerified({ ...inv, contested: true, contest_note: "no" }, " no "), true);
-  assert.equal(contestVerified({ ...inv, contested: false }, "no"), false);
+test("decline and withdraw free the active slot", () => {
+  assert.ok(declineVerified(agreement(), agreement({ active_count: 0 }), clause({ state: "DECLINED" })));
+  assert.ok(!declineVerified(agreement(), agreement(), clause({ state: "DECLINED" })));
+  assert.ok(withdrawVerified(agreement(), agreement({ active_count: 0 }), clause({ state: "WITHDRAWN" })));
+});
+
+test("invoke and answer", () => {
+  const c0 = clause({ state: "RATIFIED", invocable: true });
+  assert.ok(invokeVerified(c0, { ...c0, invocations: [inv({ by: B, note: "late" })] }, B, " late "));
+  assert.ok(!invokeVerified(c0, { ...c0, invocations: [inv({ by: A })] }, B, "invoice 12 unpaid"));
+  const answered = { ...c0, invocations: [inv({ state: "CONTESTED", response_note: "Already paid" })] };
+  assert.ok(respondVerified(answered, 1, "CONTESTED", "Already paid"));
+  assert.ok(!respondVerified(answered, 1, "ACKNOWLEDGED", "Already paid"));
+});
+
+test("close: request, cancel, confirm", () => {
+  assert.ok(requestCloseVerified(agreement({ state: "CLOSING", close_requested_by: A }), A));
+  assert.ok(!requestCloseVerified(agreement({ state: "CLOSED", close_requested_by: A, closed_by: A }), A), "one side alone closing is wrong");
+  assert.ok(cancelCloseVerified(agreement()));
+  const before = agreement({ state: "CLOSING", close_requested_by: A });
+  const closed = agreement({ state: "CLOSED", close_requested_by: A, closed_by: B });
+  const stand = clause({ state: "RATIFIED", invocable: true });
+  const lapse = clause({ state: "RATIFIED", fate: "LAPSED", invocable: false }, E1);
+  assert.ok(confirmCloseVerified(before, closed, [stand, lapse, clause({ state: "VOID" }, "v")], B));
+  assert.ok(!confirmCloseVerified(before, closed, [stand, clause({ state: "PROPOSED" }, "p")], B), "a pending proposal must be void");
+  assert.ok(!confirmCloseVerified(before, closed, [{ ...lapse, invocable: true }], B), "LAPSED must stop being invocable");
+  assert.ok(!confirmCloseVerified(before, closed, [stand], A));
 });

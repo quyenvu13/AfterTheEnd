@@ -1,6 +1,11 @@
 {
   "network": "GenLayer StudioNet (chain 61999)",
-  "source_sha256": "65249de251e03d4fda463979f99be8220bde0f5f0a2c955039315b751cd42c1d",
-  "intelligent_contract": "0x294667415F31825ddC29f986B47c3dE747c1ff85",
-  "project": "0x4fE214a0a79888c3bA8639976Ec4Ed4b08861B2A"
+  "source_sha256": "9e84c65c9fb33c96f2d04dd049d945128952fd5166189e450f5f9a36bd734feb",
+  "project": "0xC32AE2297C3bAB48DD5C19E7Ea126E2b03d83451",
+  "previous": {
+    "source": "SurvivalGate 1.0",
+    "source_sha256": "65249de251e03d4fda463979f99be8220bde0f5f0a2c955039315b751cd42c1d",
+    "intelligent_contract": "0x294667415F31825ddC29f986B47c3dE747c1ff85",
+    "project": "0x4fE214a0a79888c3bA8639976Ec4Ed4b08861B2A"
+  }
 }

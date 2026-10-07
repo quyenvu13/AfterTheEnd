@@ -11,14 +11,26 @@ test("SUCCESS on the leader receipt is success", () => {
   assert.equal(classifyTransaction(tx).kind, "success");
 });
 
+test("leader SUCCESS while consensus is still running is pending, not success", () => {
+  for (const status of ["PROPOSING", "COMMITTING", "REVEALING", "PENDING", 3, "4"]) {
+    const v = classifyTransaction({ status, consensus_data: { leader_receipt: [{ mode: "leader", execution_result: "SUCCESS" }] } });
+    assert.equal(v.kind, "pending", String(status));
+  }
+  for (const status of ["FINALIZED", 7, "5", "READY_TO_FINALIZE"]) {
+    const v = classifyTransaction({ status, consensus_data: { leader_receipt: [{ mode: "leader", execution_result: "SUCCESS" }] } });
+    assert.equal(v.kind, "success", String(status));
+  }
+  assert.equal(classifyTransaction({ status: 6, consensus_data: { leader_receipt: { mode: "leader", execution_result: "SUCCESS" } } }).kind, "error");
+});
+
 test("validator receipt listed first does not count; leader is found by mode", () => {
   const tx = { consensus_data: { leader_receipt: [
     { mode: "validator", execution_result: "SUCCESS" },
-    { mode: "leader", execution_result: "ERROR", result: b64("UserError: This clause lapsed when the agreement was closed") },
+    { mode: "leader", execution_result: "ERROR", result: b64("UserError: Only the other side may answer this invocation") },
   ] } };
   const v = classifyTransaction(tx);
   assert.equal(v.kind, "error");
-  assert.equal(v.kind === "error" && v.reason, "This clause lapsed when the agreement was closed");
+  assert.equal(v.kind === "error" && v.reason, "Only the other side may answer this invocation");
 });
 
 test("missing or null execution result is NOT success", () => {
@@ -34,15 +46,15 @@ test("UNDETERMINED / CANCELED is a failure even with a SUCCESS leader", () => {
 });
 
 test("revert reason found in plain, hex and base64 fields", () => {
-  assert.equal(revertReasonFrom({ error: "[rollback] This agreement is already closed" }), "This agreement is already closed");
-  assert.equal(revertReasonFrom({ result: hex("No such invocation") }), "No such invocation");
-  assert.equal(revertReasonFrom({ genvm_result: { stderr: b64("x UserError('Unknown agreement')") } }), "Unknown agreement");
+  assert.equal(revertReasonFrom({ error: "[rollback] This invocation has already been answered" }), "This invocation has already been answered");
+  assert.equal(revertReasonFrom({ result: hex("This agreement is not live") }), "This agreement is not live");
+  assert.equal(revertReasonFrom({ genvm_result: { stderr: b64("x UserError('Unknown clause id')") } }), "Unknown clause id");
   assert.equal(revertReasonFrom({ a: "nothing here" }), null);
 });
 
 test("errorMessage walks every nested cause", () => {
-  const err = { message: "Execution reverted", cause: { shortMessage: "RPC error", cause: { details: "UserError: The other side cannot be the author" } } };
-  assert.equal(errorMessage(err), "The other side cannot be the author");
+  const err = { message: "Execution reverted", cause: { shortMessage: "RPC error", cause: { details: "UserError: Only the proposer may withdraw this clause" } } };
+  assert.equal(errorMessage(err), "Only the proposer may withdraw this clause");
   assert.equal(errorMessage({ code: 4001, message: "User rejected the request." }), "The wallet request was rejected.");
   assert.match(errorMessage(new Error("RLP string ends with 12 superfluous bytes")), /255 bytes/);
 });

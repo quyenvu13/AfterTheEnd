@@ -11,15 +11,15 @@ function run(contract: string): number {
   const dir = mkdtempSync(join(tmpdir(), "src-"));
   mkdirSync(join(dir, "contracts"));
   cpSync(join(root, "SOURCE_SHA256.txt"), join(dir, "SOURCE_SHA256.txt"));
-  writeFileSync(join(dir, "contracts", "SurvivalGate.py"), contract);
+  writeFileSync(join(dir, "contracts", "ClauseAccord.py"), contract);
   return spawnSync("node", [join(root, "tools", "verify-source.mjs")], { cwd: dir }).status ?? 1;
 }
-const original = readFileSync(join(root, "contracts", "SurvivalGate.py"), "utf8");
+const original = readFileSync(join(root, "contracts", "ClauseAccord.py"), "utf8");
 
 test("repo source matches SOURCE_SHA256.txt", () => assert.equal(run(original), 0));
 test("CRLF copy matches", () => assert.equal(run(original.replace(/\n/g, "\r\n")), 0));
 test("missing final newline matches", () => assert.equal(run(original.replace(/\n$/, "")), 0));
-test("one changed byte fails", () => assert.equal(run(original.replace("MAX_NOTE_LENGTH = 60", "MAX_NOTE_LENGTH = 61")), 1));
+test("one changed byte fails", () => assert.equal(run(original.replace("MAX_INVOCATIONS = 20", "MAX_INVOCATIONS = 21")), 1));
 test("deployments.json carries the same SHA", () => {
   const dep = JSON.parse(readFileSync(join(root, "deployments.json"), "utf8"));
   assert.equal(dep.source_sha256, readFileSync(join(root, "SOURCE_SHA256.txt"), "utf8").split(/\s+/)[0]);

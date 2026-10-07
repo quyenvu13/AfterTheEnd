@@ -1,0 +1,166 @@
+{
+ "total": 32,
+ "caught": 32,
+ "results": [
+  {
+   "name": "DIES_WITH_IT does not become LAPSED",
+   "status": "CAUGHT",
+   "first_failure": "FAILED tests/contract/test_clauseaccord.py::test_tooth_standing_outlives_the_close_and_lapsed_does_not"
+  },
+  {
+   "name": "LAPSED stays invocable after the close",
+   "status": "CAUGHT",
+   "first_failure": "FAILED tests/contract/test_clauseaccord.py::test_tooth_standing_outlives_the_close_and_lapsed_does_not"
+  },
+  {
+   "name": "a proposal binds at once (no ratification)",
+   "status": "CAUGHT",
+   "first_failure": "FAILED tests/contract/test_clauseaccord.py::test_tooth_standing_outlives_the_close_and_lapsed_does_not"
+  },
+  {
+   "name": "a proposed clause is invocable",
+   "status": "CAUGHT",
+   "first_failure": "FAILED tests/contract/test_clauseaccord.py::test_fate_is_read_at_proposal_and_shown_before_ratification"
+  },
+  {
+   "name": "ratification ignores the text hash",
+   "status": "CAUGHT",
+   "first_failure": "FAILED tests/contract/test_clauseaccord.py::test_ratification_signs_the_exact_normalized_text"
+  },
+  {
+   "name": "text hash not normalized",
+   "status": "CAUGHT",
+   "first_failure": "FAILED tests/contract/test_clauseaccord.py::test_ratification_signs_the_exact_normalized_text"
+  },
+  {
+   "name": "the proposer may ratify",
+   "status": "CAUGHT",
+   "first_failure": "FAILED tests/contract/test_clauseaccord.py::test_either_side_may_propose_and_only_the_other_ratifies"
+  },
+  {
+   "name": "the proposer may decline",
+   "status": "CAUGHT",
+   "first_failure": "FAILED tests/contract/test_clauseaccord.py::test_the_proposer_cannot_decline_or_ratify_for_the_other_side"
+  },
+  {
+   "name": "ratification allowed while closing",
+   "status": "CAUGHT",
+   "first_failure": "FAILED tests/contract/test_clauseaccord.py::test_nothing_new_is_proposed_or_ratified_while_closing"
+  },
+  {
+   "name": "a stranger may act",
+   "status": "CAUGHT",
+   "first_failure": "FAILED tests/contract/test_clauseaccord.py::test_a_stranger_is_refused_by_every_restricted_write"
+  },
+  {
+   "name": "anyone may withdraw",
+   "status": "CAUGHT",
+   "first_failure": "FAILED tests/contract/test_clauseaccord.py::test_the_proposer_may_withdraw_before_ratification_only"
+  },
+  {
+   "name": "decline keeps the active slot",
+   "status": "CAUGHT",
+   "first_failure": "FAILED tests/contract/test_clauseaccord.py::test_declined_clause_never_binds_and_frees_its_slot"
+  },
+  {
+   "name": "withdraw keeps the active slot",
+   "status": "CAUGHT",
+   "first_failure": "FAILED tests/contract/test_clauseaccord.py::test_the_proposer_may_withdraw_before_ratification_only"
+  },
+  {
+   "name": "one side closes alone (request closes)",
+   "status": "CAUGHT",
+   "first_failure": "FAILED tests/contract/test_clauseaccord.py::test_tooth_standing_outlives_the_close_and_lapsed_does_not"
+  },
+  {
+   "name": "the requester may confirm its own close",
+   "status": "CAUGHT",
+   "first_failure": "FAILED tests/contract/test_clauseaccord.py::test_one_side_alone_cannot_close"
+  },
+  {
+   "name": "the other side may cancel the request",
+   "status": "CAUGHT",
+   "first_failure": "FAILED tests/contract/test_clauseaccord.py::test_the_requester_may_cancel_and_the_agreement_is_live_again"
+  },
+  {
+   "name": "cancel does not reopen",
+   "status": "CAUGHT",
+   "first_failure": "FAILED tests/contract/test_clauseaccord.py::test_the_requester_may_cancel_and_the_agreement_is_live_again"
+  },
+  {
+   "name": "close does not void pending proposals",
+   "status": "CAUGHT",
+   "first_failure": "FAILED tests/contract/test_clauseaccord.py::test_confirmed_close_voids_pending_proposals"
+  },
+  {
+   "name": "proposals allowed while closing",
+   "status": "CAUGHT",
+   "first_failure": "FAILED tests/contract/test_clauseaccord.py::test_nothing_new_is_proposed_or_ratified_while_closing"
+  },
+  {
+   "name": "the invoker may answer its own invocation",
+   "status": "CAUGHT",
+   "first_failure": "FAILED tests/contract/test_clauseaccord.py::test_the_other_side_acknowledges_or_contests_once"
+  },
+  {
+   "name": "an invocation may be answered twice",
+   "status": "CAUGHT",
+   "first_failure": "FAILED tests/contract/test_clauseaccord.py::test_the_other_side_acknowledges_or_contests_once"
+  },
+  {
+   "name": "acknowledge records CONTESTED",
+   "status": "CAUGHT",
+   "first_failure": "FAILED tests/contract/test_clauseaccord.py::test_the_other_side_acknowledges_or_contests_once"
+  },
+  {
+   "name": "active cap off by one",
+   "status": "CAUGHT",
+   "first_failure": "FAILED tests/contract/test_clauseaccord.py::test_declined_and_withdrawn_proposals_free_the_active_cap"
+  },
+  {
+   "name": "slot cap ignored",
+   "status": "CAUGHT",
+   "first_failure": "FAILED tests/contract/test_clauseaccord.py::test_the_slot_cap_counts_every_proposal_ever_made"
+  },
+  {
+   "name": "same agreement may be opened twice",
+   "status": "CAUGHT",
+   "first_failure": "FAILED tests/contract/test_clauseaccord.py::test_the_same_two_sides_may_open_another_agreement"
+  },
+  {
+   "name": "title not part of the agreement id",
+   "status": "CAUGHT",
+   "first_failure": "FAILED tests/contract/test_clauseaccord.py::test_tooth_standing_outlives_the_close_and_lapsed_does_not"
+  },
+  {
+   "name": "the other side may be yourself",
+   "status": "CAUGHT",
+   "first_failure": "FAILED tests/contract/test_clauseaccord.py::test_revert_other_side_is_yourself"
+  },
+  {
+   "name": "fail-safe flipped on unparseable output",
+   "status": "CAUGHT",
+   "first_failure": "FAILED tests/contract/test_clauseaccord.py::test_fail_safe_on_a_non_object_reply"
+  },
+  {
+   "name": "validator accepts any valid label",
+   "status": "CAUGHT",
+   "first_failure": "FAILED tests/contract/test_clauseaccord.py::test_validator_rejects_disagreement_and_bad_shapes"
+  },
+  {
+   "name": "reserved token not checked in the text",
+   "status": "CAUGHT",
+   "first_failure": "FAILED tests/contract/test_clauseaccord.py::test_the_text_is_fenced_and_reserved_tokens_refused"
+  },
+  {
+   "name": "invocation cap off by one",
+   "status": "CAUGHT",
+   "first_failure": "FAILED tests/contract/test_clauseaccord.py::test_the_invocation_cap - Asserti..."
+  },
+  {
+   "name": "text cap off by one",
+   "status": "CAUGHT",
+   "first_failure": "FAILED tests/contract/test_clauseaccord.py::test_revert_text_too_long - Asser..."
+  }
+ ]
+}

@@ -1,107 +1,118 @@
+// Every predictable revert, in the contract's own order, with its exact sentence.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
-  closeBlock, contestBlock, fateSentence, invokeBlock, isInvocable, normalizeWallet, recordBlock,
-  REVERTS, STANDS_AFTER_CLOSE,
+  cancelCloseBlock, closeEffect, confirmCloseBlock, declineBlock, invokeBlock, openBlock, proposeBlock, ratifyBlock,
+  requestCloseBlock, RESERVED_TOKENS, respondBlock, REVERTS, UI, withdrawBlock,
 } from "../../src/lib/rules.ts";
-import type { Agreement, Clause, Invocation } from "../../src/lib/types.ts";
+import { A, agreement, B, clause, E1, inv, S, S4, TITLE } from "./fixture.ts";
 
-const SRC = readFileSync(new URL("../../contracts/SurvivalGate.py", import.meta.url), "utf8");
-const AUTHOR = "0x" + "a".repeat(40);
-const OTHER = "0x" + "b".repeat(40);
-const STRANGER = "0x" + "c".repeat(40);
+const contract = readFileSync(new URL("../../contracts/ClauseAccord.py", import.meta.url), "utf8");
 
-function agreement(over: Partial<Agreement> = {}): Agreement {
-  return { agreement_id: "1".repeat(64), author: AUTHOR, other_wallet: OTHER, other_label: "the other side",
-    state: "LIVE", closed_by: "", closed_at: "", clause_count: 2, standing_count: 1, lapsed_count: 1, ...over };
-}
-function clause(over: Partial<Clause> = {}): Clause {
-  return { clause_id: "2".repeat(64), agreement_id: "1".repeat(64), text: "t", outcome: "SURVIVES", fate: "STANDING",
-    invocation_count: 0, invocable: true, agreement_state: "LIVE", author: AUTHOR, other_wallet: OTHER, ...over };
-}
-function inv(over: Partial<Invocation> = {}): Invocation {
-  return { clause_id: "2".repeat(64), index: 1, note: "n", by: AUTHOR, contested: false, ...over };
-}
-
-test("UI revert strings are exactly the contract's revert strings", () => {
-  const fromSource = new Set([...SRC.matchAll(/UserError\(\s*"([^"]+)"\s*\)/g)].map((m) => m[1]));
-  const fromUi = new Set(Object.values(REVERTS));
-  assert.deepEqual([...fromUi].sort(), [...fromSource].sort());
-  assert.equal(fromSource.size, 22);
+test("every revert sentence is the contract's own, and every contract revert is mirrored", () => {
+  const inContract = [...contract.matchAll(/UserError\(\s*"([^"]+)"\s*\)/g)].map((m) => m[1]);
+  assert.deepEqual([...new Set(Object.values(REVERTS))].sort(), [...new Set(inContract)].sort());
 });
 
-test("isInvocable: four combinations, three true", () => {
-  assert.equal(isInvocable("LIVE", "STANDING"), true);
-  assert.equal(isInvocable("LIVE", "LAPSED"), true);
-  assert.equal(isInvocable("CLOSED", "STANDING"), true);
-  assert.equal(isInvocable("CLOSED", "LAPSED"), false);
+test("reserved tokens and limits equal the contract's", () => {
+  for (const t of RESERVED_TOKENS) assert.ok(contract.includes(`"${t}"`), t);
+  for (const line of ["MAX_TITLE_LENGTH = 60", "MAX_TEXT_LENGTH = 140", "MAX_NOTE_LENGTH = 60", "MAX_ACTIVE_CLAUSES = 20",
+    "MAX_CLAUSE_SLOTS = 40", "MAX_INVOCATIONS = 20"]) assert.ok(contract.includes(line), line);
 });
 
-test("fate sentence after close, none while live", () => {
-  assert.equal(fateSentence("LIVE", "LAPSED"), null);
-  assert.equal(fateSentence("CLOSED", "STANDING"), STANDS_AFTER_CLOSE);
-  assert.equal(fateSentence("CLOSED", "LAPSED"), REVERTS.lapsed);
+test("open_agreement: wallet -> title -> reserved -> not yourself -> exists", () => {
+  const ok = { me: A, other: B, title: TITLE, exists: false };
+  assert.equal(openBlock(ok), null);
+  assert.equal(openBlock({ ...ok, me: "" }), UI.noWallet);
+  assert.equal(openBlock({ ...ok, other: "0x12" }), REVERTS.invalidWallet);
+  assert.equal(openBlock({ ...ok, other: "0x" + "0".repeat(40) }), REVERTS.invalidWallet);
+  assert.equal(openBlock({ ...ok, title: "  " }), REVERTS.titleEmpty);
+  assert.equal(openBlock({ ...ok, title: "t".repeat(61) }), REVERTS.titleTooLong);
+  assert.equal(openBlock({ ...ok, title: "survives" }), REVERTS.reserved);
+  assert.equal(openBlock({ ...ok, other: A.toUpperCase().replace("0X", "0x") }), REVERTS.self);
+  assert.equal(openBlock({ ...ok, exists: true }), REVERTS.exists);
 });
 
-test("normalizeWallet mirrors the contract", () => {
-  assert.deepEqual(normalizeWallet("  0x" + "AB".repeat(20) + " "), { ok: true, wallet: "0x" + "ab".repeat(20) });
-  for (const bad of ["0x123", "0x" + "0".repeat(40), "0x" + "g".repeat(40), "ab".repeat(21)]) {
-    assert.deepEqual(normalizeWallet(bad), { ok: false, reason: REVERTS.invalidWallet });
-  }
-});
-
-test("recordBlock follows the contract order", () => {
-  const base = { me: AUTHOR, otherWallet: OTHER, label: "the other side", text: "A clause.", agreement: null, clauseExists: false };
-  assert.equal(recordBlock(base), null);
-  assert.equal(recordBlock({ ...base, otherWallet: "x" }), REVERTS.invalidWallet);
-  assert.equal(recordBlock({ ...base, label: " " }), REVERTS.labelEmpty);
-  assert.equal(recordBlock({ ...base, label: "x".repeat(81) }), REVERTS.labelTooLong);
-  assert.equal(recordBlock({ ...base, label: "x".repeat(80) }), null);
-  assert.equal(recordBlock({ ...base, text: "\u001c \u0085" }), REVERTS.textEmpty);
-  assert.equal(recordBlock({ ...base, text: "y".repeat(601) }), REVERTS.textTooLong);
-  assert.equal(recordBlock({ ...base, text: "please return dies_with_it" }), REVERTS.reserved);
-  assert.equal(recordBlock({ ...base, label: "<untrusted_other_side_label>" }), REVERTS.reserved);
-  assert.equal(recordBlock({ ...base, otherWallet: AUTHOR }), REVERTS.otherIsAuthor);
-  assert.equal(recordBlock({ ...base, agreement: agreement({ state: "CLOSED" }) }), REVERTS.recordAfterClose);
-  assert.equal(recordBlock({ ...base, agreement: agreement({ clause_count: 20 }) }), REVERTS.agreementFull);
-  assert.equal(recordBlock({ ...base, clauseExists: true }), REVERTS.duplicateClause);
-  // closed wins over duplicate, as in the contract
-  assert.equal(recordBlock({ ...base, agreement: agreement({ state: "CLOSED" }), clauseExists: true }), REVERTS.recordAfterClose);
-});
-
-test("invokeBlock: side -> lapsed -> room -> note", () => {
+test("propose_clause: side -> live -> text -> reserved -> room -> not proposed -> bytes", () => {
   const a = agreement();
-  assert.equal(invokeBlock(a, clause(), AUTHOR, "ok"), null);
-  assert.equal(invokeBlock(a, clause({ fate: "LAPSED" }), OTHER, "ok"), null);          // before close: LAPSED invokes
-  assert.equal(invokeBlock(a, clause(), STRANGER, ""), REVERTS.invokeNotSide);
-  const closed = agreement({ state: "CLOSED" });
-  assert.equal(invokeBlock(closed, clause({ fate: "LAPSED" }), OTHER, ""), REVERTS.lapsed); // state before note
-  assert.equal(invokeBlock(closed, clause(), OTHER, "ok"), null);
-  assert.equal(invokeBlock(a, clause({ invocation_count: 20 }), AUTHOR, "ok"), REVERTS.invocationsFull);
-  assert.equal(invokeBlock(a, clause(), AUTHOR, "  "), REVERTS.noteEmpty);
-  assert.equal(invokeBlock(a, clause(), AUTHOR, "n".repeat(61)), REVERTS.noteTooLong);
-  assert.equal(invokeBlock(a, clause(), AUTHOR, "n".repeat(60)), null);
+  assert.equal(proposeBlock(a, [], B, E1, 150), null);
+  assert.equal(proposeBlock(a, [], S, E1, 150), REVERTS.sides);
+  assert.equal(proposeBlock(agreement({ state: "CLOSING" }), [], A, E1, 150), REVERTS.notLive);
+  assert.equal(proposeBlock(a, [], A, " ", 150), REVERTS.textEmpty);
+  assert.equal(proposeBlock(a, [], A, "t".repeat(141), 150), REVERTS.textTooLong);
+  assert.equal(proposeBlock(a, [], A, "it dies_with_it", 150), REVERTS.reserved);
+  assert.equal(proposeBlock(agreement({ active_count: 20 }), [], A, E1, 150), REVERTS.full);
+  assert.equal(proposeBlock(agreement({ slot_count: 40, active_count: 0 }), [], A, E1, 150), REVERTS.full);
+  assert.equal(proposeBlock(a, [clause({ state: "WITHDRAWN" })], B, `  ${S4} `, 150), REVERTS.proposed);
+  assert.equal(proposeBlock(a, [], A, E1, 256), UI.tooManyBytes);
 });
 
-test("closeBlock", () => {
-  assert.equal(closeBlock(agreement(), AUTHOR), null);
-  assert.equal(closeBlock(agreement(), OTHER), null);
-  assert.equal(closeBlock(agreement(), STRANGER), REVERTS.unknownAgreement);
-  assert.equal(closeBlock(null, AUTHOR), REVERTS.unknownAgreement);
-  assert.equal(closeBlock(agreement({ state: "CLOSED" }), AUTHOR), REVERTS.alreadyClosed);
-});
-
-test("contestBlock: side -> index -> own -> contested -> note; works after close", () => {
+test("ratify / decline: the other side only, while proposed and live, the exact text", () => {
   const a = agreement();
-  const c = clause({ invocation_count: 1 });
-  assert.equal(contestBlock(a, c, inv(), 1, OTHER, "no"), null);
-  assert.equal(contestBlock(agreement({ state: "CLOSED" }), c, inv(), 1, OTHER, "no"), null);
-  assert.equal(contestBlock(a, c, inv(), 1, STRANGER, ""), REVERTS.contestNotSide);
-  assert.equal(contestBlock(a, c, null, 2, OTHER, "no"), REVERTS.noSuchInvocation);
-  assert.equal(contestBlock(a, c, inv(), 0, OTHER, "no"), REVERTS.noSuchInvocation);
-  assert.equal(contestBlock(a, c, inv(), 1, AUTHOR, ""), REVERTS.contestOwn);
-  assert.equal(contestBlock(a, c, inv({ contested: true }), 1, OTHER, ""), REVERTS.alreadyContested);
-  assert.equal(contestBlock(a, c, inv(), 1, OTHER, ""), REVERTS.noteEmpty);
-  assert.equal(contestBlock(a, c, inv(), 1, OTHER, "x".repeat(61)), REVERTS.noteTooLong);
+  const c = clause();
+  assert.equal(ratifyBlock(a, c, B, true), null);
+  assert.equal(ratifyBlock(a, c, B, false), UI.notRead);
+  assert.equal(ratifyBlock(a, c, S, true), REVERTS.sides);
+  assert.equal(ratifyBlock(a, c, A, true), REVERTS.otherRatifies, "the proposer cannot ratify its own clause");
+  assert.equal(ratifyBlock(a, clause({ state: "RATIFIED" }), B, true), REVERTS.notAwaiting);
+  assert.equal(ratifyBlock(agreement({ state: "CLOSING" }), c, B, true), REVERTS.notLive);
+  assert.equal(ratifyBlock(a, clause({ text_hash: "0".repeat(64) }), B, true), REVERTS.mismatch);
+  assert.equal(declineBlock(a, c, B), null);
+  assert.equal(declineBlock(agreement({ state: "CLOSING" }), c, B), null, "declining stays possible while closing");
+  assert.equal(declineBlock(a, c, A), REVERTS.otherRatifies);
+  assert.equal(declineBlock(a, clause({ state: "DECLINED" }), B), REVERTS.notAwaiting);
+});
+
+test("withdraw: the proposer only, while proposed", () => {
+  assert.equal(withdrawBlock(clause(), A), null);
+  assert.equal(withdrawBlock(clause(), B), REVERTS.onlyProposer);
+  assert.equal(withdrawBlock(clause({ state: "VOID" }), A), REVERTS.notAwaiting);
+});
+
+test("invoke: side -> ratified -> not lapsed after the close -> room -> note -> bytes", () => {
+  const r = clause({ state: "RATIFIED", invocable: true });
+  const lapsed = clause({ state: "RATIFIED", fate: "LAPSED", outcome: "DIES_WITH_IT" }, E1);
+  assert.equal(invokeBlock(agreement(), r, B, "x", 150), null);
+  assert.equal(invokeBlock(agreement(), r, S, "x", 150), REVERTS.sides);
+  assert.equal(invokeBlock(agreement(), clause(), A, "x", 150), REVERTS.onlyRatified, "a proposal binds nothing");
+  assert.equal(invokeBlock(agreement({ state: "CLOSING" }), lapsed, A, "x", 150), null, "LAPSED still binds until the close");
+  assert.equal(invokeBlock(agreement({ state: "CLOSED" }), lapsed, A, "x", 150), REVERTS.lapsed);
+  assert.equal(invokeBlock(agreement({ state: "CLOSED" }), r, A, "x", 150), null);
+  assert.equal(invokeBlock(agreement(), clause({ state: "RATIFIED", invocations: Array.from({ length: 20 }, (_, i) => inv({ index: i + 1 })) }), A, "x", 150), REVERTS.noRoom);
+  assert.equal(invokeBlock(agreement(), r, A, " ", 150), REVERTS.noteEmpty);
+  assert.equal(invokeBlock(agreement(), r, A, "n".repeat(61), 150), REVERTS.noteTooLong);
+  assert.equal(invokeBlock(agreement(), r, A, "x", 300), UI.tooManyBytes);
+});
+
+test("answer an invocation: side -> index -> not the invoker -> pending -> note", () => {
+  const c = clause({ state: "RATIFIED", invocations: [inv()] });
+  assert.equal(respondBlock(agreement(), c, inv(), B, "Paid"), null);
+  assert.equal(respondBlock(agreement(), c, inv(), S, "Paid"), REVERTS.sides);
+  assert.equal(respondBlock(agreement(), c, inv({ index: 2 }), B, "Paid"), REVERTS.noSuchInvocation);
+  assert.equal(respondBlock(agreement(), c, inv(), A, "mine"), REVERTS.otherAnswers);
+  assert.equal(respondBlock(agreement(), c, inv({ state: "CONTESTED" }), B, "again"), REVERTS.answered);
+  assert.equal(respondBlock(agreement(), c, inv(), B, ""), REVERTS.noteEmpty);
+});
+
+test("close takes two signatures; only the requester cancels", () => {
+  assert.equal(requestCloseBlock(agreement(), A), null);
+  assert.equal(requestCloseBlock(agreement(), S), REVERTS.sides);
+  assert.equal(requestCloseBlock(agreement({ state: "CLOSING", close_requested_by: A }), B), REVERTS.notLive);
+  const closing = agreement({ state: "CLOSING", close_requested_by: A });
+  assert.equal(confirmCloseBlock(closing, B), null);
+  assert.equal(confirmCloseBlock(closing, A), REVERTS.otherConfirms);
+  assert.equal(confirmCloseBlock(agreement(), B), REVERTS.noClose);
+  assert.equal(cancelCloseBlock(closing, A), null);
+  assert.equal(cancelCloseBlock(closing, B), REVERTS.onlyRequester);
+  assert.equal(cancelCloseBlock(agreement({ state: "CLOSED", close_requested_by: A, closed_by: B }), A), REVERTS.noClose);
+});
+
+test("close preview lists what lapses and what becomes void", () => {
+  const e = closeEffect([
+    clause({ state: "RATIFIED" }), clause({ state: "RATIFIED", fate: "LAPSED" }, E1), clause({ state: "PROPOSED" }, "pending"),
+    clause({ state: "DECLINED" }, "declined"),
+  ]);
+  assert.deepEqual([e.standing.length, e.lapsing.length, e.voiding.length], [1, 1, 1]);
+  assert.equal(e.lapsing[0].text, E1);
 });

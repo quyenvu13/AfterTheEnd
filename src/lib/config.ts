@@ -1,8 +1,8 @@
-// The Project's own deployment of the frozen SurvivalGate source (a separate
-// address from the Intelligent Contract submission). VITE_CONTRACT_ADDRESS
+// The Project's own deployment of the two-party ClauseAccord source (2.0; the 1.0
+// SurvivalGate deployments stay on record in RUNTIME_EVIDENCE.md). VITE_CONTRACT_ADDRESS
 // overrides it, e.g. to point a fork at another deployment.
-export const PROJECT_DEPLOYMENT = "0x4fE214a0a79888c3bA8639976Ec4Ed4b08861B2A";
-export const CONTRACT_ADDRESS = (String(import.meta.env.VITE_CONTRACT_ADDRESS ?? "").trim() || PROJECT_DEPLOYMENT) as `0x${string}`;
+export const PROJECT_DEPLOYMENT = "0xC32AE2297C3bAB48DD5C19E7Ea126E2b03d83451";
+export const CONTRACT_ADDRESS = (String(import.meta.env.VITE_CONTRACT_ADDRESS ?? "").trim() || PROJECT_DEPLOYMENT) as `0x${string}` | "";
 
 // Same-origin proxy declared in BOTH vite.config.ts and vercel.json.
 // Every read, every receipt poll and the write client use this one URL.
@@ -14,5 +14,7 @@ export const STUDIONET_CHAIN_HEX = "0xf22f";
 export const WALLET_ADD_RPC = "https://studio.genlayer.com/api";
 export const EXPLORER_BASE = "https://explorer-studio.genlayer.com";
 
-export const RECEIPT_TIMEOUT_MS = 60_000;
+export const SOURCE_SHA256 = "9e84c65c9fb33c96f2d04dd049d945128952fd5166189e450f5f9a36bd734feb";
+
+export const RECEIPT_TIMEOUT_MS = 150_000;
 export const RECEIPT_POLL_MS = 3_000;

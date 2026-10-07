@@ -119,3 +119,35 @@ tr.dead .clause-text { text-decoration: line-through; text-decoration-thickness:
   .register td.num { display: none; }
   .register tr { border-bottom: 2px solid var(--rule); padding-bottom: 8px; }
 }
+
+/* 2.0: two-party register */
+.mono { font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; font-size: 0.86em; }
+.two-up { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; }
+.two-up > div + div { border-left: 1px dashed var(--rule); padding-left: 26px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.chip { background: transparent; color: var(--ink); border: 1px solid var(--rule); border-radius: 999px; padding: 3px 10px; font-size: 0.82rem; }
+.chip.on { border-color: var(--ink); background: var(--ink); color: var(--paper); }
+.agreement-title { margin: 12px 0 0; font-size: 1.35rem; }
+.banner-closing { background: #fbf0e1; border: 2px dashed var(--accent); color: #8a4d12; }
+.state-line { margin-top: 6px; font-size: 0.82rem; font-family: ui-sans-serif, system-ui, sans-serif; color: var(--ink-soft); }
+.st-line-proposed { color: var(--accent); font-weight: 600; }
+.st-line-ratified { color: var(--stand); font-weight: 600; }
+tr.st-proposed td { background: #fdf7ec; }
+tr.fresh td { box-shadow: inset 3px 0 0 var(--accent); }
+.check { display: flex; gap: 8px; align-items: flex-start; font-size: 0.84rem; margin-bottom: 8px; font-family: ui-sans-serif, system-ui, sans-serif; }
+.check input { width: auto; margin-top: 3px; }
+.row.tight { gap: 6px; }
+.linkish { background: none; border: none; color: var(--ink); text-decoration: underline; padding: 0; font-size: inherit; }
+.answer { font-weight: 600; }
+.inv-pending { color: var(--accent); }
+.inv-acknowledged { color: var(--stand); }
+.inv-contested { color: var(--lapse); }
+.modal-h { margin: 14px 0 4px; font-weight: 700; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 0.9rem; }
+.app.closed .ledger tr.st-proposed td { background: transparent; }
+.app.closed .linkish { color: var(--closed-ink); }
+.app.closed .st-line-ratified { color: #8fd0ad; }
+.app.closed .state-line { color: #aab3bf; }
+@media (max-width: 720px) {
+  .two-up { grid-template-columns: 1fr; }
+  .two-up > div + div { border-left: none; padding-left: 0; border-top: 1px dashed var(--rule); padding-top: 14px; }
+}

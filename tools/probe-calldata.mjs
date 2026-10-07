@@ -2,14 +2,14 @@
 // node (no "RLP string ends with N superfluous bytes"). Uses gen_call write
 // simulation, no wallet, no transaction. Every row is built to stop at a
 // deterministic revert AFTER decoding, so no model call is made:
-//   record_clause is sent FROM the "other side" wallet -> "The other side cannot be the author"
-//   invoke / contest use an unknown id                 -> "Unknown clause id"
-//   close_agreement from an unrelated wallet           -> "Unknown agreement"
+//   open_agreement names the sending wallet itself      -> "The other side cannot be yourself"
+//   propose_clause and the close methods use an unknown agreement id -> "Unknown agreement"
+//   ratify / decline / withdraw / invoke / answer use an unknown clause id -> "Unknown clause id"
 //
 //   node tools/probe-calldata.mjs <contract_address> [rpc_url]
 import { createClient } from "genlayer-js";
 import { studionet } from "genlayer-js/chains";
-import { hardBlockRows, measureOnlyRows, OTHER } from "./calldata-rows.mjs";
+import { hardBlockRows, measureOnlyRows, WALLET } from "./calldata-rows.mjs";
 
 const address = process.argv[2];
 const rpc = process.argv[3] || "https://studio.genlayer.com/api";
@@ -36,13 +36,16 @@ for (const [group, rows] of [["HARD BLOCK", hardBlockRows()], ["MEASURE ONLY", m
   for (const r of rows) {
     let verdict;
     try {
-      await client.simulateWriteContract({ address, functionName: r.method, args: r.args, account: { address: OTHER } });
+      await client.simulateWriteContract({ address, functionName: r.method, args: r.args, account: { address: WALLET } });
       verdict = "decoded (call returned)";
     } catch (e) {
       const t = text(e);
-      verdict = /superfluous bytes/i.test(t) ? "CLIFF: " + t.slice(0, 120) : "decoded, reverted: " + t.slice(0, 120);
+      const decoded = /Unknown agreement|Unknown clause id|The other side cannot be yourself/.test(t);
+      verdict = /superfluous bytes/i.test(t) ? "CLIFF: " + t.slice(0, 120)
+        : decoded ? "decoded, reverted as planned: " + t.slice(0, 120)
+        : "NO ANSWER (RPC unreachable or unexpected reply): " + t.slice(0, 120);
     }
-    if (group === "HARD BLOCK" && verdict.startsWith("CLIFF")) failed += 1;
+    if (group === "HARD BLOCK" && !verdict.startsWith("decoded")) failed += 1;
     console.log(`  ${r.name}\n      ${verdict}`);
   }
 }

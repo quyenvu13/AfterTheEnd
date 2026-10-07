@@ -1,6 +1,9 @@
 // StudioNet receipt rule. A transaction counts as executed only when the
 // leader receipt (mode=leader) says execution_result=SUCCESS. A missing or
 // null result is NOT success: it is "Submitted — confirmation delayed".
+// A leader SUCCESS is not final either: while validators are still proposing,
+// committing, revealing or rotating the leader, the accepted state has not
+// changed yet, so it stays "pending" until the status reaches ACCEPTED.
 
 import { REVERTS } from "./rules.ts";
 
@@ -28,9 +31,18 @@ export function leaderReceipt(tx: any): any {
   return leader ?? null;
 }
 
+const STATUS_BY_NUMBER: Record<string, string> = {
+  "0": "UNINITIALIZED", "1": "PENDING", "2": "PROPOSING", "3": "COMMITTING", "4": "REVEALING", "5": "ACCEPTED",
+  "6": "UNDETERMINED", "7": "FINALIZED", "8": "CANCELED", "9": "APPEAL_REVEALING", "10": "APPEAL_COMMITTING",
+  "11": "READY_TO_FINALIZE", "12": "VALIDATORS_TIMEOUT", "13": "LEADER_TIMEOUT",
+};
+const APPLIED_STATUSES = new Set(["ACCEPTED", "READY_TO_FINALIZE", "FINALIZED"]);
+
 function statusName(tx: any): string {
   const raw = pick(tx, "status_name", "statusName", "status");
-  return raw === undefined ? "" : String(raw).toUpperCase();
+  if (raw === undefined) return "";
+  const name = String(raw).toUpperCase();
+  return STATUS_BY_NUMBER[name] ?? name;
 }
 
 const KNOWN = Object.values(REVERTS) as string[];
@@ -88,6 +100,8 @@ export function classifyTransaction(tx: any): ReceiptVerdict {
     if (FAILED_STATUSES.has(status)) {
       return { kind: "error", status, reason: `Consensus ended as ${status}; the change was not applied.` };
     }
+    // No status field at all: fall back to the leader receipt; the postcondition still guards it.
+    if (status !== "" && !APPLIED_STATUSES.has(status)) return { kind: "pending", status };
     return { kind: "success", status };
   }
   if (result === "ERROR" || result === "FINISHED_WITH_ERROR") {

@@ -1,10 +1,9 @@
 """
-Golden id vectors shared with the frontend (tests/js/ids.test.ts reads the same
-file). Ids are computed here by the deployed contract code itself
-(_agreement_id_for / _clause_id_for running on the real SDK Keccak256), so the
-JS implementation is checked against the contract, not against a second copy.
+Golden agreement-id, clause-id and text-hash vectors shared with the frontend
+(tests/js/ids.test.ts reads the same file). Every value is computed by the
+contract's own code on the real SDK Keccak256.
 
-Regenerate:  WRITE_VECTORS=1 python3.13 -m pytest tests/contract/test_id_vectors.py
+Regenerate:  WRITE_VECTORS=1 python3 -m pytest tests/contract/test_id_vectors.py
 """
 import json
 import os
@@ -12,29 +11,32 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 VECTORS = ROOT / "tests" / "js" / "id-vectors.json"
-CONTRACT = str(ROOT / "contracts" / "SurvivalGate.py")
+CONTRACT = str(ROOT / "contracts" / "ClauseAccord.py")
 
-AUTHOR = "0x3065e31b1d993d7c0d59e6786844cba56780b2d3"
-OTHER = "0x1111111111111111111111111111111111111111"
+PARTY_A = "0x6276095FAEA15108740445ff277fdA8c304657F4"
+PARTY_B = "0x10AaA763DB250e4856210Dfb91B57780F60e9879"
+TITLES = ["Website build", "  Website   build\t", "Café　job", "Line one\u0085two"]
 TEXTS = [
-    "Nothing in the closing of this arrangement releases either party from what is already owed.",
-    "Once we close, neither party owes the other anything further.",
-    "  We remain\tanswerable\nfor anything done while the work was live.  ",
-    "\u001cThe exclusivity applies only while the work is live.\u001f",
-    "Access\u0085is withdrawn at termination.",
-    "﻿Support stops on the closing date.",
-    "Confidentialité — continues　after the arrangement ends. \U0001F512",
+    "Confidentiality continues after the arrangement ends.",
+    "  The licence lapses   when the arrangement\tends. ",
+    "Café　survives",
+    "\u001cOne clause\u001f",
+    "﻿Audit 🧾",
+    "Line one\u0085line two",
 ]
 
 
 def build(contract):
-    aid = contract._agreement_id_for(AUTHOR, OTHER)
-    rows = []
+    a, b = PARTY_A.lower(), PARTY_B.lower()
+    agreements = []
+    for t in TITLES:
+        agreements.append({"title": t, "agreement_id": contract._agreement_id_for(a, b, contract._normalize_text(t.strip()))})
+    aid = agreements[0]["agreement_id"]
+    clauses = []
     for t in TEXTS:
-        norm = contract._normalize_text(t.strip())
-        rows.append({"text": t, "normalized": norm, "py_len": len(norm),
-                     "clause_id": contract._clause_id_for(aid, norm)})
-    return {"author": AUTHOR, "other": OTHER, "agreement_id": aid, "clauses": rows}
+        n = contract._normalize_text(t.strip())
+        clauses.append({"text": t, "clause_id": contract._clause_id_for(aid, n), "text_hash": contract._hash(n)})
+    return {"party_a": PARTY_A, "party_b": PARTY_B, "agreements": agreements, "clause_agreement_id": aid, "clauses": clauses}
 
 
 def test_vectors_match_contract(direct_deploy):

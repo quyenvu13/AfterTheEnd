@@ -1,8 +1,9 @@
-export const OTHER: string;
-export const AUTHOR: string;
-export const LABEL: string;
 export const ID: string;
+export const WALLET: string;
+export const HASH: string;
 export const NOTE60: string;
+export const TITLE60: string;
+export const TEXT140: string;
 export const CASES: Record<string, string>;
 export type Row = { name: string; method: string; args: unknown[] };
 export function hardBlockRows(): Row[];

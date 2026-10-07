@@ -1,49 +1,55 @@
 {
-  "author": "0x3065e31b1d993d7c0d59e6786844cba56780b2d3",
-  "other": "0x1111111111111111111111111111111111111111",
-  "agreement_id": "b82b5aaa15341149ae796bec9cb4e732985e921dba14b5abbe72c98dcb6a982f",
+  "party_a": "0x6276095FAEA15108740445ff277fdA8c304657F4",
+  "party_b": "0x10AaA763DB250e4856210Dfb91B57780F60e9879",
+  "agreements": [
+    {
+      "title": "Website build",
+      "agreement_id": "b471323cd73d3f8136a180824094babd036b3439ea9e0a53fae991eaf542a180"
+    },
+    {
+      "title": "  Website   build\t",
+      "agreement_id": "b471323cd73d3f8136a180824094babd036b3439ea9e0a53fae991eaf542a180"
+    },
+    {
+      "title": "Café　job",
+      "agreement_id": "8113efde3db1413455826defa0cc532b1d628fb1341409fe57f5d3665487e784"
+    },
+    {
+      "title": "Line onetwo",
+      "agreement_id": "4a40ff174adc54202e33bd54c0e6b1e4cbd7fee5006a30d76bf9e3e4d84f050a"
+    }
+  ],
+  "clause_agreement_id": "b471323cd73d3f8136a180824094babd036b3439ea9e0a53fae991eaf542a180",
   "clauses": [
     {
-      "text": "Nothing in the closing of this arrangement releases either party from what is already owed.",
-      "normalized": "Nothing in the closing of this arrangement releases either party from what is already owed.",
-      "py_len": 91,
-      "clause_id": "78c41dc9108cdfa7272f284f119ceb180ffbd13f92380e8427444c618826a822"
+      "text": "Confidentiality continues after the arrangement ends.",
+      "clause_id": "bff814c901d8d957e52c9e424a6b8bb00d6bb561a4e7a2794b3f5275b8ad535c",
+      "text_hash": "06cae1a016677560d6781a67362b0715da822b8a4b7ce09521abc00c61a3e8e3"
     },
     {
-      "text": "Once we close, neither party owes the other anything further.",
-      "normalized": "Once we close, neither party owes the other anything further.",
-      "py_len": 61,
-      "clause_id": "07f372752cd21bbc6b7a90c3ac4c7d703386c06447921574606cf86986fb2146"
+      "text": "  The licence lapses   when the arrangement\tends. ",
+      "clause_id": "d74fc833cc4b89712320cef0be3cce9b4d67c801c609509d9b4462e49312d1c6",
+      "text_hash": "c2205d3548609b54424a46d11d7ef4d20ed7ac6ab7d2f14348842ea7b6032363"
     },
     {
-      "text": "  We remain\tanswerable\nfor anything done while the work was live.  ",
-      "normalized": "We remain answerable for anything done while the work was live.",
-      "py_len": 63,
-      "clause_id": "74d52425c1e08ab64146929214d280c5226529ddc469d6ce8522d1bce90f8a1a"
+      "text": "Café　survives",
+      "clause_id": "d57f18eaf0276375a6a4e35279dac9723bcc164d74e36fefaf5a29cd4858960f",
+      "text_hash": "e724072c0ce913cfbeb6b7095fb2e1bc9029789ffdb10d8ec987c5b062792607"
     },
     {
-      "text": "\u001cThe exclusivity applies only while the work is live.\u001f",
-      "normalized": "The exclusivity applies only while the work is live.",
-      "py_len": 52,
-      "clause_id": "403d1258d54352068ab678dbdcc36a2840537d8c320422b53b6d83ff39644d0d"
+      "text": "\u001cOne clause\u001f",
+      "clause_id": "d5afa815393b0d3272e82d328f360eb02b2ea3ccef5ea650b001b7db6cf2906a",
+      "text_hash": "96c36e6941f2c4687db15d7a002113b5527d9f363aaff14b6d7dc966217640d0"
     },
     {
-      "text": "Accessis withdrawn at termination.",
-      "normalized": "Access is withdrawn at termination.",
-      "py_len": 35,
-      "clause_id": "0a3eb7dc858e39e46df2acd2575a543498abf89045814c8a73d02a554ccabd90"
+      "text": "﻿Audit 🧾",
+      "clause_id": "3b07f78dd6bd61a79a59eabbe938e0539a7712d94fe031203fa4d147fe12ffd3",
+      "text_hash": "9e58228616c7dad934dd2c0e7cef4f5990bc63cd86a3784d6c607a6b65651e76"
     },
     {
-      "text": "﻿Support stops on the closing date.",
-      "normalized": "﻿Support stops on the closing date.",
-      "py_len": 35,
-      "clause_id": "509a29f3e56d0959fb3d30a1436dade9751e01e8a3d4fb74b6ecfe661e0316fc"
-    },
-    {
-      "text": "Confidentialité — continues　after the arrangement ends. 🔒",
-      "normalized": "Confidentialité — continues after the arrangement ends. 🔒",
-      "py_len": 57,
-      "clause_id": "8ab3e5b23424b14b37955294f37d109980bf31cba72a1de173047ccadc107d69"
+      "text": "Line oneline two",
+      "clause_id": "15f7d90c660e08cb99f1c2653e6d89e97e008065907f9dcceff54ee5259bfd1e",
+      "text_hash": "e55076cdcdc2f8f959b91987954df4dd88166f2fce2be333e1b44ddaa461890f"
     }
   ]
 }

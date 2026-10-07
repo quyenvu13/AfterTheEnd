@@ -2,7 +2,7 @@
 // Encodes exactly like genlayer-js 1.1.8 writeContract and counts bytes.
 //   node tools/calldata-bytes.mjs            -> table, rc 1 if a HARD BLOCK row is over 255
 import { abi } from "genlayer-js";
-import { hardBlockRows, measureOnlyRows, OTHER, LABEL } from "./calldata-rows.mjs";
+import { hardBlockRows, measureOnlyRows, ID } from "./calldata-rows.mjs";
 
 const LIMIT = 255;
 const bytes = (method, args) => {
@@ -17,15 +17,13 @@ for (const r of hardBlockRows()) {
   if (n > LIMIT) failed += 1;
   console.log(`  ${n > LIMIT ? "OVER" : "ok  "}  ${String(n).padStart(4)}  ${r.name}`);
 }
-console.log("\nMEASURE ONLY (contract cap wider than the proven path)");
+console.log("\nMEASURE ONLY (non-ASCII text, blocked by the byte meter in the app)");
 for (const r of measureOnlyRows()) {
   const n = bytes(r.method, r.args);
   console.log(`  ${n > LIMIT ? "over" : "ok  "}  ${String(n).padStart(4)}  ${r.name}`);
 }
-let max = 0;
-for (let len = 1; len <= 600; len += 1) {
-  if (bytes("record_clause", [OTHER, LABEL, "x".repeat(len)]) <= LIMIT) max = len;
-}
-console.log(`\nLongest ASCII clause text that fits with label "${LABEL}": ${max} characters`);
+let maxT = 0;
+for (let len = 1; len <= 400; len += 1) if (bytes("propose_clause", [ID, "x".repeat(len)]) <= LIMIT) maxT = len;
+console.log(`\nLongest ASCII clause text that fits: ${maxT} characters (contract cap 140)`);
 console.log(failed ? `\nFAIL: ${failed} hard-block row(s) over ${LIMIT} bytes` : "\nPASS: every hard-block row fits");
 process.exit(failed ? 1 : 0);

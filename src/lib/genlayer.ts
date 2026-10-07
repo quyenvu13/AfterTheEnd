@@ -10,7 +10,8 @@ import {
   WALLET_ADD_RPC,
 } from "./config";
 import { classifyTransaction, type ReceiptVerdict } from "./receipt";
-import type { Agreement, Clause, Invocation } from "./types";
+import { parseAgreement, parseClause, parseClauses, parseLimits, type Limits } from "./parse";
+import type { Agreement, Clause } from "./types";
 
 declare global {
   interface Window {
@@ -84,64 +85,36 @@ export async function ensureStudioNet(): Promise<void> {
 }
 
 async function view(functionName: string, args: unknown[]): Promise<string> {
-  const raw = await readClient().readContract({
-    address: requireAddress(),
-    functionName,
-    args,
-    stateStatus: "accepted",
-  });
-  return String(raw ?? "");
-}
-
-function parseObject<T>(raw: string): T | null {
-  try {
-    const value = JSON.parse(raw);
-    if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).length === 0) return null;
-    return value as T;
-  } catch {
-    return null;
-  }
+  const raw = await readClient().readContract({ address: requireAddress(), functionName, args });
+  return typeof raw === "string" ? raw : JSON.stringify(raw ?? "");
 }
 
 export async function getAgreement(id: string): Promise<Agreement | null> {
-  return parseObject<Agreement>(await view("get_agreement", [id]));
+  return parseAgreement(await view("get_agreement", [id]));
 }
 
 export async function getClause(id: string): Promise<Clause | null> {
-  return parseObject<Clause>(await view("get_clause", [id]));
+  return parseClause(await view("get_clause", [id]));
 }
 
-export async function getClauses(agreementIdHex: string): Promise<Clause[]> {
-  try {
-    const list = JSON.parse(await view("get_clauses", [agreementIdHex, 0, 50]));
-    return Array.isArray(list) ? (list as Clause[]) : [];
-  } catch {
-    return [];
-  }
+/** Every clause of an agreement in proposal order (at most 40 slots; the view pages by 50). */
+export async function getClauses(id: string): Promise<Clause[] | null> {
+  return parseClauses(await view("get_clauses", [id, 0, 50]));
 }
 
-export async function getInvocations(clause: Clause): Promise<Invocation[]> {
-  const out: Invocation[] = [];
-  for (let i = 1; i <= clause.invocation_count; i += 1) {
-    const inv = parseObject<Invocation>(await view("get_invocation", [clause.clause_id, i]));
-    if (!inv) continue;
-    if (inv.contested) {
-      const c = parseObject<{ note: string }>(await view("get_contest", [clause.clause_id, i]));
-      inv.contest_note = c?.note ?? "";
-    }
-    out.push(inv);
-  }
-  return out;
+export async function getLimits(): Promise<Limits | null> {
+  return parseLimits(await view("get_limits", []));
 }
 
-export async function sendWrite(account: string, functionName: string, args: unknown[]): Promise<string> {
+/** Nothing in this contract is payable; value stays 0. */
+export async function sendWrite(account: string, functionName: string, args: unknown[], value: bigint = 0n): Promise<string> {
   await ensureStudioNet();
   const client: any = createClient({
     chain: proxiedChain(),
     account: account as `0x${string}`,
     provider: window.ethereum as any,
   } as any);
-  return (await client.writeContract({ address: requireAddress(), functionName, args, value: 0n })) as string;
+  return (await client.writeContract({ address: requireAddress(), functionName, args, value })) as string;
 }
 
 async function rawTransaction(hash: string): Promise<any> {
@@ -154,7 +127,13 @@ async function rawTransaction(hash: string): Promise<any> {
   return body?.result ?? null;
 }
 
-/** Poll ~60 s. "pending" at the end means: submitted, confirmation delayed. */
+/** One read of the receipt, no polling: used by "Check again". */
+export async function readVerdict(hash: string): Promise<ReceiptVerdict> {
+  const tx = await rawTransaction(hash);
+  return tx ? classifyTransaction(tx) : { kind: "pending", status: "" };
+}
+
+/** Poll ~150 s. "pending" at the end means: submitted, confirmation delayed. */
 export async function waitForVerdict(hash: string): Promise<ReceiptVerdict> {
   const deadline = Date.now() + RECEIPT_TIMEOUT_MS;
   let last: ReceiptVerdict = { kind: "pending", status: "" };

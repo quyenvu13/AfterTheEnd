@@ -9,11 +9,11 @@ SUBMITTED ≠ ACCEPTED ≠ FINALIZED ≠ EXECUTION SUCCESS ≠ POSTCONDITION PAS
 
 | Gate | Command | Result |
 |---|---|---|
-| kill-set + rubric overlap | `python3 SURVIVALGATE_KILLSET_CHECK.py contracts/SurvivalGate.py` | NO LEAK + PASS, rc 0 |
-| genvm-linter (AST, offline) | `python3 -m genvm_linter.cli lint contracts/SurvivalGate.py` | passed (3 checks), rc 0 |
-| genvm-linter schema / typecheck | `python3.13 -m genvm_linter.cli schema|typecheck …` | 12 methods; no type errors (run once, not in CI) |
-| contract tests, Direct Mode | `python3 -m pytest tests/contract -q` | 53 passed |
-| frontend logic tests | `npm test` | 43 passed |
+| kill-set + rubric overlap | `python3 CLAUSEACCORD_KILLSET_CHECK.py contracts/ClauseAccord.py` | NO LEAK + PASS, rc 0 |
+| genvm-linter (AST, offline) | `python3 -m genvm_linter.cli lint contracts/ClauseAccord.py` | passed (3 checks), rc 0 |
+| contract tests, Direct Mode | `python3 -m pytest tests/contract -q` | 68 passed |
+| mutation check | `python3 tools/mutate.py .` | 32/32 deliberate faults caught (`tests/mutations.py`) |
+| frontend logic tests | `npm test` | 53 passed |
 | build | `npm run build` (`tsc -b && vite build`) | rc 0 |
 | source hash | `npm run verify:source` | PASS |
 | calldata table | `node tools/calldata-bytes.mjs` | every hard-block row ≤ 255 bytes (table below) |
@@ -24,52 +24,53 @@ SUBMITTED ≠ ACCEPTED ≠ FINALIZED ≠ EXECUTION SUCCESS ≠ POSTCONDITION PAS
 
 | Row | Bytes |
 |---|---|
-| record_clause S1 / S2 / S3 / S4 / S5 | 147 / 139 / 157 / 185 / 141 |
-| record_clause E1 / E2 / E3 / E4 / E5 | 139 / 128 / 155 / 146 / 129 |
-| invoke_clause (64-hex id + 60-char note) | 161 |
-| contest_invocation (id + index 20 + 60-char note) | 169 |
-| close_agreement (wallet) | 79 |
-| record_clause at max label 80 + max text 600 (measure only) | 763 — over the cliff |
+| propose_clause S1 / S2 / S3 / S4 / S5 | 155 / 147 / 165 / 193 / 149 |
+| propose_clause E1 / E2 / E3 / E4 / E5 | 147 / 136 / 163 / 154 / 137 |
+| propose_clause at the 140-character contract cap | 242 |
+| open_agreement (wallet + 60-char title) | 140 |
+| ratify_clause (id + text hash) | 165 |
+| invoke_clause (id + 60-char note) | 161 |
+| acknowledge / contest_invocation (id + index 20 + 60-char note) | 173 / 169 |
+| decline / withdraw / request / cancel / confirm (id) | 100 / 101 / 99 / 98 / 99 |
 
-Longest ASCII clause text that fits with label `the other side`: **161 characters**. The UI shows a live
-meter and blocks sending above 255 bytes.
+Every write fits at its contract cap in ASCII. Non-ASCII text can pass 255 bytes below 140 characters; the
+app's byte meter blocks it before the wallet opens.
 
 ### Calldata on the real RPC
 
-`node tools/probe-calldata.mjs <address>` sends each row as a `gen_call` write simulation (no wallet,
-no transaction, no model call: every row stops at a deterministic revert after the node has decoded the
-calldata). CI runs it automatically for both addresses in `deployments.json` (job `probe`); the result is
-the CI log.
+`node tools/probe-calldata.mjs <address>` sends each row as a `gen_call` write simulation (no wallet, no
+transaction, no model call: each row is built to stop at a deterministic revert after the node has decoded
+it). CI runs it for the address in `deployments.json` (job `probe`) and fails on anything else.
+
+### UI check against a mocked contract
+
+The built app was driven in Chromium against an in-memory copy of the contract rules: the other side
+ratifies only after ticking the read box; the proposer sees Withdraw, not Ratify; a duplicate text is
+blocked with the contract's sentence; the close dialog lists lapsing and voiding clauses; the requester
+cannot confirm its own close; after the confirmed close the LAPSED row is disabled with the contract's
+sentence and the STANDING row stays invocable; no horizontal scroll at 390 px.
+
+Retry path: a write was held back by the mock. *Check again* before it applied stayed "confirmation
+delayed" (no success); *Check again* after it applied reported success from the same postcondition.
 
 ## Run by hand on StudioNet
 
 Only what needs a real wallet, a real signature or a human eye. Results and hashes: `RUNTIME_EVIDENCE.md`.
 
-- The contract logic and the three key checks were run on the Intelligent Contract deployment
-  (11 transactions, all as expected; see the SurvivalGate repository).
-- This Project: the same frozen source deployed again at its own address, then 6 transactions through the
-  app and 3 screenshots (`RUNTIME_EVIDENCE.md`).
-
-Note on the frontend: a call the app already knows will revert is **not** sent — the button is disabled
-with the contract's sentence — so its proof is the screenshot, not a hash.
+A call the app already knows will revert is **not** sent — the button is disabled with the contract's
+sentence — so its proof is a screenshot, not a hash.
 
 ## Consensus behaviour
 
-A leader/validator disagreement on the label fails the `record_clause` transaction. That is fail-closed
-by design: no clause is recorded with a label the validators did not agree on. The user can try again.
+A leader/validator disagreement on the label fails the `propose_clause` transaction: no clause is
+recorded with a label the validators did not agree on. The user can try again.
 
 ## What this run does NOT prove
 
 - The Direct Mode tests use **mocked** model answers. They prove the deterministic code paths, not what
-  the real model returns. Only RUNTIME_EVIDENCE proves labels.
-- **Label stability is not guaranteed on borderline sentences.** E3 was labelled `DIES_WITH_IT` on the
-  Intelligent Contract deployment (after one leader rotation) and `SURVIVES` on the Project deployment.
-  Both are recorded as they came out (`RUNTIME_EVIDENCE.md`).
-- Clause texts longer than about 160 characters (the contract allows 600) have not been sent on
-  StudioNet; the calldata path above 255 bytes is not proven.
-- Prompt-injection resistance is argued from the fence and the door check; no adversarial model run
-  was performed.
-- The UI flow was rendered against a local mock of the RPC to check the three screens; the real
-  wallet flow is covered only by the Project transactions.
-- `closed_at` comes from `gl.message_raw["datetime"]`; its exact format on StudioNet is whatever the
-  node supplies, and nothing depends on it.
+  the real model returns. Only `RUNTIME_EVIDENCE.md` proves labels.
+- **Label stability is not guaranteed on borderline sentences.** In 1.0, E3 was labelled differently on
+  two deployments; both results are recorded.
+- Prompt-injection resistance is argued from the fence and the reserved-token check; no adversarial
+  model run was performed.
+- Nothing verifies the facts behind an invocation or its answer.
