@@ -57,6 +57,10 @@ delayed" (no success); *Check again* after it applied reported success from the 
 
 Only what needs a real wallet, a real signature or a human eye. Results and hashes: `RUNTIME_EVIDENCE.md`.
 
+2.0 run on 2026-10-07: 15 transactions through the app on the contract above, two agreements between the same two
+wallets, all FINALIZED with SUCCESS, and 4 screenshots. Every label came out as expected (S4 STANDING twice, E1 and E2
+LAPSED).
+
 A call the app already knows will revert is **not** sent — the button is disabled with the contract's
 sentence — so its proof is a screenshot, not a hash.
 

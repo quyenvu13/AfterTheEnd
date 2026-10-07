@@ -2,7 +2,7 @@ AfterTheEnd does not ask whether a clause is valid, and it does not check a clau
 
 <p align="center"><img src="logo.png" alt="AfterTheEnd logo" width="128"></p>
 
-<p align="center"><img src="docs/evidence/v1-1-before-close.png" alt="Before the close" width="45%"> <img src="docs/evidence/v1-3-after-close.png" alt="After the close" width="45%"></p>
+<p align="center"><img src="docs/evidence/3-after-close.png" alt="After a close both sides signed: the LAPSED clause is blocked" width="45%"> <img src="docs/evidence/4-standing-after-close.png" alt="After the close: the STANDING clause is still invoked" width="45%"></p>
 
 # AfterTheEnd
 
@@ -82,7 +82,7 @@ contract's exact sentence. A live meter blocks any text over the 255-byte callda
 | `contracts/ClauseAccord.py` | the contract (frozen; SHA-256 in `SOURCE_SHA256.txt`) |
 | `LOCKED_SPEC.md` | the design that must not change |
 | `TEST_PLAN.md` / `TESTING.md` | cases, what is automated, what was run by hand, what is not proven |
-| `RUNTIME_EVIDENCE.md` | StudioNet transactions, one hash per row (2.0 and the earlier 1.0 runs) |
+| `RUNTIME_EVIDENCE.md` | StudioNet transactions, one hash per row: 15 for 2.0, plus the earlier 1.0 runs |
 | `tests/contract/` | Direct Mode tests on the real py-genlayer SDK (model mocked) and the mutation list |
 | `tests/js/` | frontend logic tests (Python parity, ids, revert mirroring, receipts, postconditions, retry path) |
 | `tools/` | calldata size table, RPC calldata probe, source hash check, mutation runner |

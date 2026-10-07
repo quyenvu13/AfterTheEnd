@@ -24,7 +24,11 @@ If a case gets the wrong label the rubric is **not** edited; the real result is 
 
 Open agreement (A) → propose S4 and E1 (A) → ratify both (B) → propose E2 and leave it unratified (B) →
 invoke E1 (A) → acknowledge it (B) → request close (A) → confirm close (B) → invoke S4 after the close (B).
-Expected: S4 STANDING, E1 LAPSED, E2 VOID after the close, E1 no longer invocable. Results: `RUNTIME_EVIDENCE.md`.
+Expected: S4 STANDING, E1 LAPSED, E2 VOID after the close, E1 no longer invocable.
+
+As run (`RUNTIME_EVIDENCE.md`): in agreement 1 S4 was left unratified and became VOID at the close, so the
+"STANDING still invocable after the close" step was run in a second agreement between the same wallets
+(propose S4 → ratify → request close → confirm close → invoke S4).
 
 ## 3. Deterministic cases (automated — `tests/contract/test_clauseaccord.py`)
 
