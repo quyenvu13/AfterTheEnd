@@ -1,10 +1,15 @@
 // Confirms on the real StudioNet RPC that each calldata shape is DECODED by the
-// node (no "RLP string ends with N superfluous bytes"). Uses gen_call write
-// simulation, no wallet, no transaction. Every row is built to stop at a
-// deterministic revert AFTER decoding, so no model call is made:
-//   open_agreement names the sending wallet itself      -> "The other side cannot be yourself"
+// node (no "RLP string ends with N superfluous bytes"). A row counts as decoded
+// when the call returns, the contract's sentence comes back, or the node reports
+// "execution failed" (StudioNet gen_call does not return the sentence). A network
+// error or no answer fails the job. gen_call write simulation only: no wallet, no
+// transaction, nothing stored. No row reaches the model:
+//   open_agreement names the sending wallet itself -> "The other side cannot be yourself"
 //   propose_clause and the close methods use an unknown agreement id -> "Unknown agreement"
 //   ratify / decline / withdraw / invoke / answer use an unknown clause id -> "Unknown clause id"
+//
+// The public RPC allows about 30 requests per minute, so rows are spaced out and a
+// rate-limit answer is waited out and retried instead of counted as a failure.
 //
 //   node tools/probe-calldata.mjs <contract_address> [rpc_url]
 import { createClient } from "genlayer-js";
@@ -30,20 +35,45 @@ function text(e) {
   return out.join(" | ");
 }
 
+const EXPECTED = ["Unknown agreement", "Unknown clause id", "The other side cannot be yourself"];
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const SPACING_MS = 2500;
+const RATE_WAIT_MS = 65_000;
+
+async function simulate(r) {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      await client.simulateWriteContract({ address, functionName: r.method, args: r.args, account: { address: WALLET } });
+      return null;
+    } catch (e) {
+      const t = text(e);
+      if (/rate limit/i.test(t) && attempt < 3) {
+        console.log(`      rate limited, waiting ${RATE_WAIT_MS / 1000}s`);
+        await sleep(RATE_WAIT_MS);
+        continue;
+      }
+      return t;
+    }
+  }
+}
+
 let failed = 0;
 for (const [group, rows] of [["HARD BLOCK", hardBlockRows()], ["MEASURE ONLY", measureOnlyRows()]]) {
   console.log(group);
   for (const r of rows) {
+    await sleep(SPACING_MS);
     let verdict;
-    try {
-      await client.simulateWriteContract({ address, functionName: r.method, args: r.args, account: { address: WALLET } });
+    const t = await simulate(r);
+    if (t === null) {
       verdict = "decoded (call returned)";
-    } catch (e) {
-      const t = text(e);
-      const decoded = /Unknown agreement|Unknown clause id|The other side cannot be yourself/.test(t);
-      verdict = /superfluous bytes/i.test(t) ? "CLIFF: " + t.slice(0, 120)
-        : decoded ? "decoded, reverted as planned: " + t.slice(0, 120)
-        : "NO ANSWER (RPC unreachable or unexpected reply): " + t.slice(0, 120);
+    } else if (/superfluous bytes/i.test(t)) {
+      verdict = "CLIFF: " + t.slice(0, 120);
+    } else if (EXPECTED.some((x) => t.includes(x))) {
+      verdict = "decoded, reverted with the contract's own sentence";
+    } else if (/execution failed/i.test(t)) {
+      verdict = "decoded, execution failed on the node (StudioNet gen_call does not return the sentence)";
+    } else {
+      verdict = "NOT REACHED (the node did not answer): " + t.slice(0, 120);
     }
     if (group === "HARD BLOCK" && !verdict.startsWith("decoded")) failed += 1;
     console.log(`  ${r.name}\n      ${verdict}`);

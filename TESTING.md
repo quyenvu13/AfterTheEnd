@@ -40,7 +40,7 @@ app's byte meter blocks it before the wallet opens.
 
 `node tools/probe-calldata.mjs <address>` sends each row as a `gen_call` write simulation (no wallet, no
 transaction, no model call: each row is built to stop at a deterministic revert after the node has decoded
-it). CI runs it for the address in `deployments.json` (job `probe`) and fails on anything else.
+it). CI runs it for the address in `deployments.json` (job `probe`) and fails on a cliff or on no answer; StudioNet gen_call reports a revert as "execution failed" without the sentence, which still means the node decoded the calldata.
 
 ### UI check against a mocked contract
 
