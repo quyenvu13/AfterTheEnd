@@ -9,15 +9,15 @@ jobs:
   contract:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      - run: pip install "genvm-linter==0.11.0" "genlayer-test==0.29.2" "pytest>=8,<9"
+      - run: pip install "genvm-linter==0.11.0" "genlayer-test==0.29.2" "pytest>=8,<9" pycryptodome
       - name: Kill-set and rubric gate
-        run: python3 SURVIVALGATE_KILLSET_CHECK.py contracts/SurvivalGate.py
+        run: python3 CLAUSEACCORD_KILLSET_CHECK.py contracts/ClauseAccord.py
       - name: genvm-linter lint (AST, offline; not "check", which needs the network)
-        run: python3 -m genvm_linter.cli lint contracts/SurvivalGate.py
+        run: python3 -m genvm_linter.cli lint contracts/ClauseAccord.py
       - uses: actions/cache@v4
         with:
           path: ~/.cache/gltest-direct
@@ -33,11 +33,11 @@ jobs:
   frontend:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: "22"
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - run: npm ci
@@ -48,19 +48,15 @@ jobs:
         run: node tools/calldata-bytes.mjs
 
   probe:
-    # Runs only once deployments.json carries an address. Uses gen_call simulation
-    # on StudioNet: no wallet, no transaction, no model call.
+    # Checks on StudioNet that every write's calldata is decoded by the node.
+    # gen_call simulation only: no wallet, no transaction, no model call.
     runs-on: ubuntu-latest
     needs: frontend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: "22"
       - run: npm ci
       - name: Probe calldata on the RPC
-        run: |
-          for key in intelligent_contract project; do
-            addr=$(node -e "console.log(require('./deployments.json')['$key'] || '')")
-            if [ -n "$addr" ]; then echo "== $key $addr"; node tools/probe-calldata.mjs "$addr"; else echo "== $key: no address yet, skipped"; fi
-          done
+        run: node tools/probe-calldata.mjs "$(node -e "console.log(require('./deployments.json').project)")"
